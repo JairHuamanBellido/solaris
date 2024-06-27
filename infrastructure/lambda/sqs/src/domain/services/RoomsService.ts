@@ -1,6 +1,6 @@
 import { AblyController } from "../../infrastructure/ably";
 import { RoomRepository } from "../../infrastructure/repository/RoomRepository";
-import { IRoomMongoDB } from "../interface/IRoom";
+import { IRoomMongoDB, IRounds } from "../interface/IRoom";
 
 export class RoomsServices {
   static async addScore({
@@ -52,6 +52,14 @@ export class RoomsServices {
         }, 0) / room.max_players;
 
       round.average_number = parseFloat(average_number.toFixed(2));
+
+      const { winnerId, winnerNumber } = this.getWinner(average_number, round);
+
+      AblyController.notifyWinner(roomId, {
+        user_id: winnerId,
+        average_number: round.average_number,
+        user_number_selected: winnerNumber,
+      });
     }
 
     let updateRoom: IRoomMongoDB = {
@@ -62,5 +70,25 @@ export class RoomsServices {
 
     await RoomRepository.addPlayerScore(updateRoom);
     return Promise.resolve(1);
+  }
+
+  private static getWinner(average_number: number, round: IRounds) {
+    let winnerId: string = "";
+    let differenceMinimun: number = Infinity;
+    let winnerNumber: number = 0;
+
+    for (const score of round.score) {
+      const numberSelected = score.number_selected;
+
+      const diff = Math.abs(numberSelected - average_number);
+
+      if (diff < differenceMinimun) {
+        differenceMinimun = diff;
+        winnerId = score.user_id;
+        winnerNumber = numberSelected;
+      }
+    }
+
+    return { winnerId, winnerNumber };
   }
 }

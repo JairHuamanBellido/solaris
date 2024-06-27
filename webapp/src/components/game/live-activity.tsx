@@ -8,7 +8,9 @@ interface Props {
 export default function LiveActivityWrapper({ room }: Props) {
   return (
     <ChannelProvider channelName={`${room.id}:score`}>
-      <LiveActivityContainer room={room} />
+      <ChannelProvider channelName={`${room.id}:winner`}>
+        <LiveActivityContainer room={room} />
+      </ChannelProvider>
     </ChannelProvider>
   );
 }
@@ -16,9 +18,20 @@ export default function LiveActivityWrapper({ room }: Props) {
 function LiveActivityContainer({ room }: Props) {
   const [logs, setLogs] = useState<string[]>([]);
   useChannel(`${room.id}:score`, (message) => {
-    
     const userId = message.data.user_id;
     setLogs([...logs, `${userId} played`]);
+  });
+
+  useChannel(`${room.id}:winner`, (message) => {
+    console.log(message.data);
+    const userId = message.data.user_id;
+    const average = message.data.average_number;
+    const userNumberSelected = message.data.user_number_selected;
+
+    setLogs([
+      ...logs,
+      `Winner: ${userId}. Average: ${average}. Most close: ${userNumberSelected}`,
+    ]);
   });
 
   return (
