@@ -1,0 +1,22 @@
+{
+  "name": "sqs",
+  "version": "1.0.0",
+  "description": "Lambda trigger for SQS",
+  "scripts": {
+    "compile": "tsc",
+    "prebuild": "rm -rf dist",
+    "build": " esbuild ./src/lambda/*.ts --bundle --minify --sourcemap --platform=node --outdir=dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ably": "^2.2.0",
+    "esbuild": "^0.21.5",
+    "mongodb": "^6.7.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "typescript": "^5.5.2"
+  }
+}
