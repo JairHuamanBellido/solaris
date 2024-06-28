@@ -2,6 +2,7 @@ import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { APIGatewayConstruct } from "./constructs/api-gateway.construct";
 import { SQSConstruct } from "./constructs/sqs.construct";
+import { CognitoConstruct } from "./constructs/cognito.construct";
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class SolarisInfrastructureStack extends cdk.Stack {
@@ -21,7 +22,7 @@ export class SolarisInfrastructureStack extends cdk.Stack {
     );
 
     apigwConstruct.attachSubmitScoreSQS(sqsConstruct.Integration);
-
+    new CognitoConstruct(this, `Solaris-Cognito-${this._env}`);
     // The code that defines your stack goes here
 
     // example resource
