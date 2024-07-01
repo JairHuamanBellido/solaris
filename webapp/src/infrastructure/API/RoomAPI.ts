@@ -3,15 +3,18 @@ import { IAPIRoom } from "../model/APIRoom.interface";
 
 export class RoomsAPI {
   static async getAll(): Promise<IAPIRoom[]> {
-    return await fetch(`${API_URL}/rooms`, { next: { tags: ["rooms"] } }).then(
-      (res) => res.json()
+    return await fetch(`${API_URL}/rooms`, { cache: "no-cache" }).then((res) =>
+      res.json()
     );
   }
 
   static async getById(id: string): Promise<IAPIRoom> {
     return await fetch(`${API_URL}/rooms/${id}`, {
-      next: { tags: [`rooms-${id}`] },
-    }).then((res) => res.json());
+      cache: "no-cache",
+    }).then(async (res) => {
+      const response = await res.json();
+      return response;
+    });
   }
 
   static async joinRoom(room_id: string, player_id: string): Promise<any> {
@@ -21,10 +24,7 @@ export class RoomsAPI {
         method: "POST",
         body: JSON.stringify({ player_id }),
       }
-    ).then((res) => {
-      console.log(res.ok);
-      return res.json();
-    });
+    ).then((res) => res.json());
   }
 
   static async submitScore({

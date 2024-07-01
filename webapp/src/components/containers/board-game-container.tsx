@@ -7,9 +7,9 @@ interface Props {
 }
 export default function BoardGameContainer({ room }: Props) {
   return (
-    <div className="flex ">
-      <Board room={room} />
+    <div className="flex w-full space-x-4">
       <LiveActivityWrapper room={room} />
+      <Board room={room} />
     </div>
   );
 }
