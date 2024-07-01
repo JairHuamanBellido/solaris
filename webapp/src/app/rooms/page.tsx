@@ -1,5 +1,6 @@
+import RoomCard from "@/components/cards/room-card";
+import { Heading2, Paragraph } from "@/components/typography";
 import { RoomsService } from "@/domain/service/RoomsService";
-import Link from "next/link";
 
 const getAllRooms = async () => await RoomsService.getAll();
 
@@ -7,13 +8,14 @@ export default async function Page() {
   const rooms = await getAllRooms();
 
   return (
-    <div>
+    <div className="p-8">
+      <div className="mb-8">
+        <Heading2>Rooms</Heading2>
+        <Paragraph>{rooms.length} room(s)</Paragraph>
+      </div>
+
       {rooms.map((room) => (
-        <div key={room.id}>
-          <p>{room.name}</p>
-          <p>Status :{room.status} </p>
-          <Link href={`/rooms/${room.id}`}>Join</Link>
-        </div>
+        <RoomCard room={room} />
       ))}
     </div>
   );
