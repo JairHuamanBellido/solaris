@@ -10,7 +10,7 @@ export interface IUser {
   readonly name: string;
   readonly username: string;
   readonly email: string;
-  readonly mongodb_id: string;
+  readonly cognito_id: string;
 }
 
 export interface IUserMongoDB extends WithId<IUser> {}
