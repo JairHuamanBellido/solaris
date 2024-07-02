@@ -15,6 +15,7 @@
     "ably": "^2.1.0",
     "dotenv": "^16.4.5",
     "esbuild": "^0.21.5",
+    "jwt-decode": "^4.0.0",
     "mongodb": "^6.7.0"
   },
   "devDependencies": {

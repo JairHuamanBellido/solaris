@@ -11,9 +11,12 @@ export class SolarisInfrastructureStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    const cognito = new CognitoConstruct(this, `Solaris-Cognito-${this._env}`);
+
     const apigwConstruct = new APIGatewayConstruct(
       this,
-      `Solaris-APIGateway-${this._env})`
+      `Solaris-APIGateway-${this._env})`,
+      cognito.userPool
     );
 
     const sqsConstruct = new SQSConstruct(
@@ -22,7 +25,6 @@ export class SolarisInfrastructureStack extends cdk.Stack {
     );
 
     apigwConstruct.attachSubmitScoreSQS(sqsConstruct.Integration);
-    new CognitoConstruct(this, `Solaris-Cognito-${this._env}`);
     // The code that defines your stack goes here
 
     // example resource
