@@ -86,4 +86,8 @@ export class CognitoConstruct extends Construct {
       },
     });
   }
+
+  public get userPool(): UserPool {
+    return this._userPool;
+  }
 }

@@ -1,5 +1,7 @@
 import {
+  AuthorizationType,
   AwsIntegration,
+  CognitoUserPoolsAuthorizer,
   Cors,
   LambdaIntegration,
   MethodOptions,
@@ -11,12 +13,13 @@ import {
 import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import { Construct } from "constructs";
 import { SubmitScoreModel } from "./submit-score-model.construct";
+import { IUserPool } from "aws-cdk-lib/aws-cognito";
 
 export class APIGatewayConstruct extends Construct {
   private _env: string | undefined = this.node.getContext("env") || "dev";
   private _lambdaAPIDist: string = "lambda/api/dist";
   private _apigw: RestApi;
-  constructor(scope: Construct, id: string) {
+  constructor(scope: Construct, id: string, congitoAuthorizer: IUserPool) {
     super(scope, id);
 
     const IPWhiteList = (process.env.IP_WHITELIST || "").split(",");
@@ -32,18 +35,36 @@ export class APIGatewayConstruct extends Construct {
       },
     });
 
+    const auth = new CognitoUserPoolsAuthorizer(
+      this,
+      `SolarisCognitoAuthorizer-${this._env}`,
+      {
+        cognitoUserPools: [congitoAuthorizer],
+        authorizerName: `solaris-authorizer-${this._env}`,
+      }
+    );
+
     const roomsResource = this._apigw.root.addResource("rooms");
     const roomsDetailResource = roomsResource.addResource("{id}");
     const roomsDetailGame = roomsDetailResource.addResource("game");
+    const profileResouce = this._apigw.root.addResource("profile");
 
     const getAllRoomsIntegration = this.getAllRoomsIntegration();
     const getRoomDetailIntegration = this.getRoomDetailIntegration();
     const joinRoomIntegration = this.joinRoomIntegration();
+    const getProfileIntegration = this.getProfileIntegration();
 
     roomsResource.addMethod("GET", getAllRoomsIntegration);
     roomsDetailResource.addMethod("GET", getRoomDetailIntegration);
 
     roomsDetailGame.addMethod("POST", joinRoomIntegration);
+
+    roomsDetailGame.addMethod("GET", getRoomDetailIntegration);
+
+    profileResouce.addMethod("GET", getProfileIntegration, {
+      authorizer: auth,
+      authorizationType: AuthorizationType.COGNITO,
+    });
   }
 
   private getAllRoomsIntegration() {
@@ -94,6 +115,21 @@ export class APIGatewayConstruct extends Construct {
     return new LambdaIntegration(joinRoomFn);
   }
 
+  private getProfileIntegration() {
+    const getProfileFn = new Function(this, `GetProfileFn-${this._env}`, {
+      runtime: Runtime.NODEJS_20_X,
+      handler: "get-profile.handler",
+      functionName: `solaris-get-profile-${this._env}`,
+      code: Code.fromAsset(this._lambdaAPIDist),
+      environment: {
+        MONGODB_URI: process.env.MONGODB_URI || "",
+        MONGODB_DATABASE: process.env.MONGODB_DATABASE || "",
+      },
+    });
+
+    return new LambdaIntegration(getProfileFn);
+  }
+
   public attachSubmitScoreSQS(integration: AwsIntegration) {
     const submitScoreModel = new SubmitScoreModel(
       this,
@@ -122,7 +158,9 @@ export class APIGatewayConstruct extends Construct {
       },
     };
 
-    const roomDetailResource = this._apigw.root.getResource("rooms")?.getResource("{id}");
+    const roomDetailResource = this._apigw.root
+      .getResource("rooms")
+      ?.getResource("{id}");
 
     if (!roomDetailResource) {
       throw new Error("Resource dont exist");
