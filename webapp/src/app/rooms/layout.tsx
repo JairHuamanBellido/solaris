@@ -1,4 +1,5 @@
 import Navigation from "@/components/nav/navigation";
+import { Paragraph } from "@/components/typography";
 import ZustandWrapper from "@/components/zustand/wrapper";
 import { UserService } from "@/domain/service/UserService";
 import { ReactNode } from "react";
@@ -14,6 +15,14 @@ export default async function RootLayout({
   children: ReactNode;
 }) {
   const user = await getProfile();
+
+  if (user instanceof Error) {
+    return (
+      <div className="">
+        <Paragraph>User not found!</Paragraph>
+      </div>
+    );
+  }
 
   return (
     <>
