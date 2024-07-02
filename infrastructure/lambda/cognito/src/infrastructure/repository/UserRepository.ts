@@ -13,7 +13,7 @@ export class UserRepository {
       email: payload.email,
       name: payload.name,
       username: payload.username,
-      mongodb_id: payload.id,
+      cognito_id: payload.id,
     });
   }
 }

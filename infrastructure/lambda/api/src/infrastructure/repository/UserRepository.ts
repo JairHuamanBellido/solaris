@@ -9,6 +9,6 @@ export class UserRepository {
 
     const usersCollection = db.collection<IUser>(this._userCollection);
 
-    return await usersCollection.findOne<IUser>({ mongodb_id: id });
+    return await usersCollection.findOne<IUser>({ cognito_id: id });
   }
 }
