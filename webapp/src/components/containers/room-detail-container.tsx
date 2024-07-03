@@ -1,13 +1,16 @@
 "use client";
 import { RoomsModel } from "@/domain/model/Rooms.model";
-import { RoomsService } from "@/domain/service/RoomsService";
-import { useMutation } from "@tanstack/react-query";
 import { ChannelProvider, useChannel } from "ably/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BoardGameContainer from "./board-game-container";
 import { Heading1, Paragraph, ParagraphMuted } from "../typography";
 import { Loader2Icon } from "lucide-react";
-import { Button } from "../ui/button";
+import { TJOIN_OR_LEAVE_ROOM } from "@/core/constants";
+import { useFormState } from "react-dom";
+import { JoinOrLeaveRoomAction } from "@/app/rooms/[id]/action";
+import { Input } from "../ui/input";
+import SubmitButton from "../button/submit-button";
+import { useProfileStore } from "@/store";
 interface Props {
   room: RoomsModel;
 }
@@ -17,7 +20,9 @@ export default function RoomContainerDetail({ room }: Props) {
     <ChannelProvider channelName={`${room.id}`}>
       <ChannelProvider channelName={`${room.id}:ready`}>
         <ChannelProvider channelName={`${room.id}:join`}>
-          <Container room={room} />
+          <ChannelProvider channelName={`${room.id}:leave`}>
+            <Container room={room} />
+          </ChannelProvider>
         </ChannelProvider>
       </ChannelProvider>
     </ChannelProvider>
@@ -25,16 +30,18 @@ export default function RoomContainerDetail({ room }: Props) {
 }
 
 function Container({ room }: Props) {
-  const { mutate } = useMutation({
-    mutationFn: async (room_id: string) => await RoomsService.joinRoom(room_id),
-  });
-
   const [numberOfPlayers, setNumberOfPlayers] = useState<number>(
     room.players.length
   );
 
-  const [logs, setLogs] = useState<string[]>([]);
+  const { user } = useProfileStore();
+
   const [isGameReady, setIsGameReady] = useState<boolean>(false);
+  const [isAlreadyJoined, setIsAlreadyJoined] = useState<boolean>(false);
+
+  useEffect(() => {
+    setIsAlreadyJoined(room.players.includes(user.id));
+  }, [user, room]);
 
   useChannel(`${room.id}:ready`, (message) => {
     if (message.data.status === "READY") {
@@ -43,7 +50,18 @@ function Container({ room }: Props) {
   });
   useChannel(`${room.id}:join`, (message) => {
     setNumberOfPlayers((prev) => prev + 1);
-    setLogs([...logs, `${message.data.userId} has joined.`]);
+
+    if (message.data.userId === user.id) {
+      setIsAlreadyJoined(true);
+    }
+  });
+
+  useChannel(`${room.id}:leave`, (message) => {
+    setNumberOfPlayers((prev) => prev - 1);
+
+    if (message.data.userId === user.id) {
+      setIsAlreadyJoined(false);
+    }
   });
 
   if (isGameReady || room.status === "READY") {
@@ -56,7 +74,6 @@ function Container({ room }: Props) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       <Heading1 className="mb-2">Welcome to {room.name}</Heading1>
-
       <div>
         <Paragraph>
           Players: {numberOfPlayers} / {room.max_players}
@@ -71,13 +88,30 @@ function Container({ room }: Props) {
         </ParagraphMuted>
       </div>
 
-      <Button
-        onClick={() => {
-          mutate(room.id);
-        }}
-      >
-        Join
-      </Button>
+      <JoinOrLeaveForm type={isAlreadyJoined ? "LEAVE" : "JOIN"} room={room} />
     </div>
+  );
+}
+
+function JoinOrLeaveForm({
+  type,
+  room,
+}: {
+  type: TJOIN_OR_LEAVE_ROOM;
+  room: RoomsModel;
+}) {
+  const [_, action] = useFormState<any, FormData>(
+    JoinOrLeaveRoomAction,
+    {}
+  );
+
+  return (
+    <form action={action} className="flex flex-col space-y-4">
+      <Input className="hidden h-0" name="roomId" value={room.id} />
+      <Input className="hidden h-0" name="action" value={type} />
+      <SubmitButton variant={type === "JOIN" ? "default" : "destructive"}>
+        {type === "JOIN" ? "Join" : "Leave"}
+      </SubmitButton>
+    </form>
   );
 }

@@ -51,13 +51,13 @@ export class APIGatewayConstruct extends Construct {
 
     const getAllRoomsIntegration = this.getAllRoomsIntegration();
     const getRoomDetailIntegration = this.getRoomDetailIntegration();
-    const joinRoomIntegration = this.joinRoomIntegration();
+    const joinOrLeaveRoomIntegration = this.joinOrLeaveRoomIntegration();
     const getProfileIntegration = this.getProfileIntegration();
 
     roomsResource.addMethod("GET", getAllRoomsIntegration);
     roomsDetailResource.addMethod("GET", getRoomDetailIntegration);
 
-    roomsDetailGame.addMethod("POST", joinRoomIntegration);
+    roomsDetailGame.addMethod("POST", joinOrLeaveRoomIntegration);
 
     roomsDetailGame.addMethod("GET", getRoomDetailIntegration);
 
@@ -99,20 +99,24 @@ export class APIGatewayConstruct extends Construct {
     return new LambdaIntegration(getRoomDetailFn);
   }
 
-  private joinRoomIntegration() {
-    const joinRoomFn = new Function(this, `JoinRoomFn-${this._env}`, {
-      runtime: Runtime.NODEJS_20_X,
-      handler: "join-room.handler",
-      functionName: `solaris-join-room-${this._env}`,
-      code: Code.fromAsset(this._lambdaAPIDist),
-      environment: {
-        MONGODB_URI: process.env.MONGODB_URI || "",
-        MONGODB_DATABASE: process.env.MONGODB_DATABASE || "",
-        ABLY_KEY: process.env.ABLY_KEY || "",
-      },
-    });
+  private joinOrLeaveRoomIntegration() {
+    const joinOrLeaveRoomFn = new Function(
+      this,
+      `JoinRoomOrLeaveFn-${this._env}`,
+      {
+        runtime: Runtime.NODEJS_20_X,
+        handler: "join-or-leave-room.handler",
+        functionName: `solaris-join-or-leave-room-${this._env}`,
+        code: Code.fromAsset(this._lambdaAPIDist),
+        environment: {
+          MONGODB_URI: process.env.MONGODB_URI || "",
+          MONGODB_DATABASE: process.env.MONGODB_DATABASE || "",
+          ABLY_KEY: process.env.ABLY_KEY || "",
+        },
+      }
+    );
 
-    return new LambdaIntegration(joinRoomFn);
+    return new LambdaIntegration(joinOrLeaveRoomFn);
   }
 
   private getProfileIntegration() {

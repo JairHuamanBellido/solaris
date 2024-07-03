@@ -38,6 +38,23 @@ export class RoomRepository {
     );
   }
 
+  static async removePlayer(room_id: string, player_id: string) {
+    const db = await connectToDatabase();
+
+    const roomsCollection = db.collection<IRoomMongoDB>(this._roomCollection);
+
+    return await roomsCollection.updateOne(
+      {
+        _id: new ObjectId(room_id),
+      },
+      {
+        $pull: {
+          players: { $in: [player_id] },
+        },
+      }
+    );
+  }
+
   static async updateStatusToReady(room_id: string) {
     const db = await connectToDatabase();
 

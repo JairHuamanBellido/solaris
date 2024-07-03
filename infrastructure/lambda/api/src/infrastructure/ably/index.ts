@@ -4,7 +4,12 @@ export class AblyController {
 
   static async notifyNewUserJoinRoom(room_id: string, user_id: string) {
     const channel = this.ably.channels.get(`${room_id}:join`);
-    return await channel.publish(`${room_id}`, { userId: user_id });
+    return await channel.publish(`${room_id}:join`, { userId: user_id });
+  }
+
+  static async notifyUserLeaveJoinRoom(room_id: string, user_id: string) {
+    const channel = this.ably.channels.get(`${room_id}:leave`);
+    return await channel.publish(`${room_id}:leave`, { userId: user_id });
   }
 
   static async notifyGameReady(room_id: string) {

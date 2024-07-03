@@ -1,5 +1,6 @@
 import { RoomsAPI } from "@/infrastructure/API/RoomAPI";
 import { RoomsModel } from "../model/Rooms.model";
+import { TJOIN_OR_LEAVE_ROOM } from "@/core/constants";
 
 export class RoomsService {
   static async getAll(): Promise<RoomsModel[]> {
@@ -28,9 +29,11 @@ export class RoomsService {
     };
   }
 
-  static async joinRoom(room_id: string): Promise<any> {
-    const userId: string = localStorage.getItem("userId") || "abc";
-    return await RoomsAPI.joinRoom(room_id, userId);
+  static async joinOrLeaveRoom(
+    room_id: string,
+    type: TJOIN_OR_LEAVE_ROOM
+  ): Promise<any> {
+    return await RoomsAPI.joinOrLeaveRoom({ room_id, type });
   }
 
   static async submitScore({
