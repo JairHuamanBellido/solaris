@@ -11,7 +11,7 @@ export class UserService {
 
     return {
       email: userAPI.email,
-      id: userAPI._id,
+      id: userAPI.cognito_id,
       name: userAPI.name,
       username: userAPI.username,
     };

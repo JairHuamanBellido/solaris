@@ -1,5 +1,6 @@
 import { API_URL } from "@/core/constants";
-import { IAPIRoom } from "../model/APIRoom.interface";
+import { IAPIRoom, IJoinOrLeaveRoomPayload } from "../model/APIRoom.interface";
+import { cookies } from "next/headers";
 
 export class RoomsAPI {
   static async getAll(): Promise<IAPIRoom[]> {
@@ -17,14 +18,15 @@ export class RoomsAPI {
     });
   }
 
-  static async joinRoom(room_id: string, player_id: string): Promise<any> {
-    return await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/rooms/${room_id}/game`,
-      {
-        method: "POST",
-        body: JSON.stringify({ player_id }),
-      }
-    ).then((res) => res.json());
+  static async joinOrLeaveRoom({
+    room_id,
+    type,
+  }: IJoinOrLeaveRoomPayload): Promise<any> {
+    return await fetch(`${API_URL}/rooms/${room_id}/game`, {
+      headers: { Authorization: cookies().get("token")?.value ?? "" },
+      method: "POST",
+      body: JSON.stringify({ type }),
+    }).then((res) => res.json());
   }
 
   static async submitScore({

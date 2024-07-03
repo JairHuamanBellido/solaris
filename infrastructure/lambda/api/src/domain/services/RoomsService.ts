@@ -31,4 +31,15 @@ export class RoomsServices {
 
     return addPlayerQuery;
   }
+
+  static async removePlayer(room_id: string, player_id: string) {
+    const removePlayerQuery = await RoomRepository.removePlayer(
+      room_id,
+      player_id
+    );
+
+    await AblyController.notifyUserLeaveJoinRoom(room_id, player_id);
+
+    return removePlayerQuery;
+  }
 }

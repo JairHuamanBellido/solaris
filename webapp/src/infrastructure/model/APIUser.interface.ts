@@ -3,5 +3,5 @@ export interface IAPIUser {
   readonly email: string;
   readonly name: string;
   readonly username: string;
-  readonly mongodb_id: string;
+  readonly cognito_id: string;
 }
