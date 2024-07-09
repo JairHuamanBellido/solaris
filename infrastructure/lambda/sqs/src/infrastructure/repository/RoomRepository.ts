@@ -23,6 +23,7 @@ export class RoomRepository {
       {
         $set: {
           rounds: room.rounds,
+          current_round: room.current_round,
         },
       }
     );

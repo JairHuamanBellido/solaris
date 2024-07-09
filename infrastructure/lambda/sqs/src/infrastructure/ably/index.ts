@@ -4,6 +4,7 @@ interface INotifyWinnerPayload {
   readonly user_id: string;
   readonly average_number: number;
   readonly user_number_selected: number;
+  readonly scores:{name:string;number_selected:number}[]
 }
 export class AblyController {
   private static ably = new Realtime(process.env.ABLY_KEY || "");
