@@ -1,5 +1,6 @@
 import { AblyController } from "../../infrastructure/ably";
 import { RoomRepository } from "../../infrastructure/repository/RoomRepository";
+import { UserRepository } from "../../infrastructure/repository/UserRepository";
 import { IRoomMongoDB, IRounds } from "../interface/IRoom";
 
 export class RoomsServices {
@@ -13,9 +14,13 @@ export class RoomsServices {
     score: number;
   }) {
     const room = await RoomRepository.findById(roomId);
-
+    const user = await UserRepository.findByCognitoId(userId);
     if (!room) {
       throw new Error("Room not found");
+    }
+
+    if (!user) {
+      throw new Error("User not found");
     }
 
     const getLastRound = room.rounds.find((round) => round.status === "OPEN");
@@ -24,15 +29,24 @@ export class RoomsServices {
 
     // If there isn't round registered, create a new one
     if (!getLastRound) {
-      const newRoom: IRoomMongoDB = {
+      let newRoom: IRoomMongoDB = {
         ...room,
       };
       newRoom.rounds.push({
         id: room.rounds.length + 1,
         average_number: 0,
-        score: [{ number_selected: score, user_id: userId }],
+        score: [
+          {
+            number_selected: score,
+            user_id: userId,
+            user_name: user?.name || "",
+          },
+        ],
         status: "OPEN",
+        winner: null,
       });
+
+      newRoom.current_round = newRoom.rounds.length;
       await RoomRepository.addPlayerScore(newRoom);
       return Promise.resolve(1);
     }
@@ -41,7 +55,11 @@ export class RoomsServices {
     const index = room.rounds.indexOf(getLastRound);
     let round = room.rounds[index];
 
-    round.score.push({ number_selected: score, user_id: userId });
+    round.score.push({
+      number_selected: score,
+      user_id: userId,
+      user_name: user?.name || "",
+    });
 
     // Validate the current score is the last one, in order to close the round
     if (round.score.length === room.max_players) {
@@ -55,11 +73,35 @@ export class RoomsServices {
 
       const { winnerId, winnerNumber } = this.getWinner(average_number, round);
 
-      AblyController.notifyWinner(roomId, {
+      room.rounds[room.current_round - 1].winner = {
+        user_id: winnerId,
+        user_number_selected: winnerNumber,
+      };
+
+      let scores: { name: string; number_selected: number }[] = [];
+
+      const currentScoresRoom = room.rounds[room.current_round - 1].score;
+
+      for await (const score of currentScoresRoom) {
+        const personName = await UserRepository.findByCognitoId(score.user_id);
+        if (!personName) {
+          continue;
+        }
+
+        scores.push({
+          name: personName.name,
+          number_selected: score.number_selected,
+        });
+      }
+
+      await AblyController.notifyWinner(roomId, {
         user_id: winnerId,
         average_number: round.average_number,
         user_number_selected: winnerNumber,
+        scores,
       });
+
+      room.current_round = room.rounds.length + 1;
     }
 
     let updateRoom: IRoomMongoDB = {
