@@ -6,19 +6,22 @@ export class RoomsService {
   static async getAll(): Promise<RoomsModel[]> {
     const roomsAPI = await RoomsAPI.getAll();
 
-    return roomsAPI.map(({ _id, max_players, name, players, status }) => ({
-      id: _id,
-      name,
-      players,
-      status,
-      max_players,
-    }));
+    return roomsAPI.map(
+      ({ _id, max_players, name, players, status, rounds, current_round }) => ({
+        id: _id,
+        name,
+        players,
+        status,
+        max_players,
+        rounds,
+        current_round,
+      })
+    );
   }
 
   static async getById(id: string): Promise<RoomsModel> {
-    const { _id, max_players, name, players, status } = await RoomsAPI.getById(
-      id
-    );
+    const { _id, max_players, name, players, status, rounds, current_round } =
+      await RoomsAPI.getById(id);
 
     return {
       id: _id,
@@ -26,6 +29,8 @@ export class RoomsService {
       name,
       players,
       status,
+      rounds,
+      current_round,
     };
   }
 

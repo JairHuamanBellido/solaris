@@ -35,17 +35,15 @@ function Container({ room }: Props) {
   );
 
   const { user } = useProfileStore();
-
-  const [isGameReady, setIsGameReady] = useState<boolean>(false);
   const [isAlreadyJoined, setIsAlreadyJoined] = useState<boolean>(false);
 
   useEffect(() => {
-    setIsAlreadyJoined(room.players.includes(user.id));
+    setIsAlreadyJoined(room.players.some((player) => player.id === user.id));
   }, [user, room]);
 
   useChannel(`${room.id}:ready`, (message) => {
     if (message.data.status === "READY") {
-      setIsGameReady(true);
+      window.location.reload();
     }
   });
   useChannel(`${room.id}:join`, (message) => {
@@ -64,7 +62,7 @@ function Container({ room }: Props) {
     }
   });
 
-  if (isGameReady || room.status === "READY") {
+  if (room.status === "READY") {
     return (
       <div className="p-8">
         <BoardGameContainer room={room} />
@@ -100,10 +98,7 @@ function JoinOrLeaveForm({
   type: TJOIN_OR_LEAVE_ROOM;
   room: RoomsModel;
 }) {
-  const [_, action] = useFormState<any, FormData>(
-    JoinOrLeaveRoomAction,
-    {}
-  );
+  const [_, action] = useFormState<any, FormData>(JoinOrLeaveRoomAction, {});
 
   return (
     <form action={action} className="flex flex-col space-y-4">

@@ -1,6 +1,8 @@
 import { RoomsModel } from "@/domain/model/Rooms.model";
 import Board from "../game/board";
-import LiveActivityWrapper from "../game/live-activity";
+import LiveActivityContainer from "../game/live-activity";
+import { ChannelProvider } from "ably/react";
+import WinnerList from "../game/winner-list";
 
 interface Props {
   room: RoomsModel;
@@ -8,8 +10,15 @@ interface Props {
 export default function BoardGameContainer({ room }: Props) {
   return (
     <div className="flex w-full space-x-4">
-      <LiveActivityWrapper room={room} />
-      <Board room={room} />
+      <ChannelProvider channelName={`${room.id}:score`}>
+        <ChannelProvider channelName={`${room.id}:winner`}>
+          <>
+            <LiveActivityContainer room={room} />
+            <Board room={room} />
+            <WinnerList room={room} />
+          </>
+        </ChannelProvider>
+      </ChannelProvider>
     </div>
   );
 }

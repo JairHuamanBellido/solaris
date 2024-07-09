@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${font.className} filter-bg`}>
+      <body className={`${font.className}`}>
         <div className="w-screen h-screen relative bg-background/95 backdrop-blur-3xl">
           <Providers>{children}</Providers>
         </div>

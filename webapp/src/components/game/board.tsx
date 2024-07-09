@@ -4,25 +4,52 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { useFormState } from "react-dom";
 import SubmitButton from "../button/submit-button";
+import { useChannel } from "ably/react";
+import { useProfileStore } from "@/store";
 
-const arr = Array.from({ length: 100 }, (_, index) => index + 1);
+const arr = Array.from({ length: 100 }, (_, index) => index);
 
 interface Props {
   room: RoomsModel;
 }
 export default function Board({ room }: Props) {
-  const [selected, setSelected] = useState<number>(0);
-  const [name, setName] = useState<string>();
-  const [state, action] = useFormState<any, FormData>(SubmitScoreAction, {});
+  const { user } = useProfileStore();
+  const [selected, setSelected] = useState<number | null>(null);
+
+  const [_, action] = useFormState<any, FormData>(SubmitScoreAction, {});
+  const [isNotAllowToPlay, setIsNotAllowToPlay] = useState<boolean>(false);
 
   useEffect(() => {
-    setName(localStorage.getItem("userId") || "default");
-  }, []);
+    if (room.rounds.length) {
+      if (!room.rounds[room.current_round - 1]) {
+        setIsNotAllowToPlay(false);
+      } else {
+        setIsNotAllowToPlay(
+          room.rounds[room.current_round - 1].score.some(
+            (s) => s.user_id === ""
+          )
+        );
+      }
+    }
+  }, [user, room]);
+  useChannel(`${room.id}:score`, (message) => {
+    const userId = message.data.user_id;
+    if (userId === user.id) {
+      setIsNotAllowToPlay(true);
+    }
+  });
+
+  useChannel(`${room.id}:winner`, () => {
+    setIsNotAllowToPlay(false);
+    setSelected(-1);
+  });
+
   return (
     <div className="flex flex-col flex-3 justify-center items-center">
       <div className="grid grid-rows-10 w-[800px] grid-flow-col gap-4">
         {arr.map((n) => (
           <div
+            key={`select-${n}`}
             onClick={() => {
               setSelected(n);
             }}
@@ -50,15 +77,17 @@ export default function Board({ room }: Props) {
             className="hidden h-0"
             type="text"
             name="userId"
-            value={name}
+            value={user.id}
           />
           <input
             className="hidden h-0"
             type="text"
             name="score"
-            value={selected}
+            value={selected || -1}
           />
-          <SubmitButton disable={selected === 0}>Choose</SubmitButton>
+          <SubmitButton disable={isNotAllowToPlay || !selected}>
+            Choose
+          </SubmitButton>
         </form>
       </div>
     </div>

@@ -15,7 +15,7 @@ export default async function Page() {
       </div>
 
       {rooms.map((room) => (
-        <RoomCard room={room} />
+        <RoomCard key={`room-${room.id}`} room={room} />
       ))}
     </div>
   );
